@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1C Tracker</title>
+<script src="https://apis.google.com/js/api.js" async></script>
+<script src="https://accounts.google.com/gsi/client" async></script>
+<style>
+  :root {
+    --cream: #F5F0E8;
+    --cream-dark: #EDE6D8;
+    --black: #1A1A1A;
+    --dark-wood: #3D2B1F;
+    --mid-wood: #6B4C35;
+    --rust: #A8472A;
+    --burgundy: #7A2E3C;
+    --warm-gray: #8A8278;
+    --border: rgba(61,43,31,0.15);
+    --border-strong: rgba(61,43,31,0.3);
+    --font: 'Georgia', serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--cream);
+    color: var(--black);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--dark-wood);
+    color: var(--cream);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  header h1 {
+    font-family: var(--font);
+    font-size: 18px;
+    font-weight: normal;
+    letter-spacing: 0.05em;
+  }
+
+  header h1 span {
+    color: var(--rust);
+    font-style: italic;
+  }
+
+  .drive-btn {
+    background: transparent;
+    border: 1px solid rgba(245,240,232,0.3);
+    color: var(--cream);
+    padding: 6px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: var(--font-sans);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.2s;
+  }
+
+  .drive-btn:hover { background: rgba(245,240,232,0.1); }
+
+  .drive-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--warm-gray);
+  }
+  .drive-dot.connected { background: #6BAF7A; }
+  .drive-dot.syncing { background: #E8B84B; }
+  .drive-dot.error { background: var(--rust); }
+
+  nav {
+    background: var(--cream-dark);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    overflow-x: auto;
+    padding: 0 24px;
+  }
+
+  nav button {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--warm-gray);
+    cursor: pointer;
+    font-family: var(--font-sans);
+    font-size: 13px;
+    padding: 14px 16px 12px;
+    white-space: nowrap;
+    transition: color 0.2s;
+    letter-spacing: 0.03em;
+  }
+
+  nav button:hover { color: var(--black); }
+  nav button.active {
+    color: var(--dark-wood);
+    border-bottom-color: var(--rust);
+    font-weight: 500;
+  }
+
+  main { padding: 24px; max-width: 1100px; margin: 0 auto; }
+
+  .tab { display: none; }
+  .tab.active { display: block; }
+
+  /* OVERVIEW */
+  .room-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .room-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 18px;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .room-card:hover {
+    border-color: var(--border-strong);
+    box-shadow: 0 2px 8px rgba(61,43,31,0.08);
+  }
+
+  .room-card h3 {
+    font-family: var(--font);
+    font-size: 15px;
+    font-weight: normal;
+    color: var(--dark-wood);
+    margin-bottom: 8px;
+  }
+
+  .room-progress {
+    height: 3px;
+    background: var(--cream-dark);
+    border-radius: 2px;
+    margin-bottom: 10px;
+    overflow: hidden;
+  }
+
+  .room-progress-fill {
+    height: 100%;
+    background: var(--rust);
+    border-radius: 2px;
+    transition: width 0.3s;
+  }
+
+  .room-stats {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    color: var(--warm-gray);
+  }
+
+  .room-stats strong { color: var(--black); }
+
+  /* SHOPPING */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .section-header h2 {
+    font-family: var(--font);
+    font-size: 20px;
+    font-weight: normal;
+    color: var(--dark-wood);
+  }
+
+  .btn {
+    background: var(--dark-wood);
+    border: none;
+    border-radius: 4px;
+    color: var(--cream);
+    cursor: pointer;
+    font-family: var(--font-sans);
+    font-size: 13px;
+    padding: 8px 16px;
+    transition: background 0.2s;
+  }
+
+  .btn:hover { background: var(--mid-wood); }
+
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    color: var(--dark-wood);
+    cursor: pointer;
+    font-family: var(--font-sans);
+    font-size: 13px;
+    padding: 7px 14px;
+    transition: background 0.2s;
+  }
+
+  .btn-ghost:hover { background: var(--cream-dark); }
+
+  .filter-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .filter-btn {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--warm-gray);
+    cursor: pointer;
+    font-size: 12px;
+    padding: 5px 12px;
+    transition: all 0.2s;
+  }
+
+  .filter-btn:hover, .filter-btn.active {
+    background: var(--dark-wood);
+    border-color: var(--dark-wood);
+    color: var(--cream);
+  }
+
+  .shopping-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .shopping-table th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--warm-gray);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0 12px 10px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .shopping-table td {
+    padding: 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+
+  .shopping-table tr:last-child td { border-bottom: none; }
+
+  .shopping-table tr:hover td { background: var(--cream-dark); }
+
+  .status-badge {
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 10px;
+    white-space: nowrap;
+  }
+
+  .status-to-buy { background: #FEF3E8; color: #A8472A; }
+  .status-ordered { background: #FFF8E1; color: #8B6914; }
+  .status-arrived { background: #EAF4EE; color: #2D7A47; }
+  .status-skip { background: var(--cream-dark); color: var(--warm-gray); }
+
+  .item-name { font-weight: 500; color: var(--black); }
+  .item-notes { font-size: 12px; color: var(--warm-gray); margin-top: 2px; }
+  .item-link { color: var(--rust); text-decoration: none; font-size: 12px; }
+  .item-link:hover { text-decoration: underline; }
+
+  .price { font-variant-numeric: tabular-nums; }
+
+  .action-btns { display: flex; gap: 6px; }
+  .icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--warm-gray);
+    font-size: 16px;
+    padding: 4px;
+    border-radius: 3px;
+    line-height: 1;
+    transition: color 0.2s, background 0.2s;
+  }
+  .icon-btn:hover { color: var(--black); background: var(--cream-dark); }
+  .icon-btn.danger:hover { color: var(--rust); }
+
+  /* TODOS */
+  .todo-columns {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+  }
+
+  .todo-col {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .todo-col-header {
+    background: var(--cream-dark);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .todo-col-header h3 {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--dark-wood);
+    letter-spacing: 0.03em;
+  }
+
+  .todo-count {
+    background: var(--rust);
+    border-radius: 10px;
+    color: white;
+    font-size: 11px;
+    font-weight: 500;
+    min-width: 20px;
+    padding: 1px 6px;
+    text-align: center;
+  }
+
+  .todo-list { padding: 8px; }
+
+  .todo-item {
+    align-items: flex-start;
+    border-radius: 6px;
+    display: flex;
+    gap: 10px;
+    padding: 10px;
+    transition: background 0.15s;
+  }
+
+  .todo-item:hover { background: var(--cream-dark); }
+
+  .todo-item input[type="checkbox"] {
+    accent-color: var(--rust);
+    cursor: pointer;
+    flex-shrink: 0;
+    height: 16px;
+    margin-top: 2px;
+    width: 16px;
+  }
+
+  .todo-text { flex: 1; }
+  .todo-title { font-size: 13px; line-height: 1.4; }
+  .todo-title.done { color: var(--warm-gray); text-decoration: line-through; }
+  .todo-meta { font-size: 11px; color: var(--warm-gray); margin-top: 3px; }
+  .todo-room-tag {
+    background: var(--cream-dark);
+    border-radius: 3px;
+    color: var(--mid-wood);
+    font-size: 10px;
+    font-weight: 500;
+    padding: 1px 6px;
+  }
+
+  /* INSPO */
+  .inspo-rooms {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .inspo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+  }
+
+  .inspo-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .inspo-card img {
+    display: block;
+    height: 160px;
+    object-fit: cover;
+    width: 100%;
+  }
+
+  .inspo-card-body {
+    padding: 10px 12px;
+  }
+
+  .inspo-card-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--black);
+    margin-bottom: 2px;
+  }
+
+  .inspo-card-meta {
+    font-size: 11px;
+    color: var(--warm-gray);
+  }
+
+  .inspo-delete {
+    background: rgba(26,26,26,0.6);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+    height: 26px;
+    line-height: 1;
+    opacity: 0;
+    position: absolute;
+    right: 8px;
+    top: 8px;
+    transition: opacity 0.2s;
+    width: 26px;
+  }
+
+  .inspo-card:hover .inspo-delete { opacity: 1; }
+
+  .upload-zone {
+    align-items: center;
+    border: 2px dashed var(--border-strong);
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    justify-content: center;
+    min-height: 160px;
+    padding: 20px;
+    text-align: center;
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  .upload-zone:hover {
+    background: var(--cream-dark);
+    border-color: var(--rust);
+  }
+
+  .upload-zone p { color: var(--warm-gray); font-size: 13px; }
+  .upload-zone input { display: none; }
+
+  /* MODAL */
+  .modal-overlay {
+    align-items: center;
+    background: rgba(26,26,26,0.5);
+    bottom: 0;
+    display: none;
+    justify-content: center;
+    left: 0;
+    position: fixed;
+    right: 0;
+    top: 0;
+    z-index: 200;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: white;
+    border-radius: 10px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 24px;
+    width: 100%;
+    max-width: 500px;
+    margin: 16px;
+  }
+
+  .modal h2 {
+    font-family: var(--font);
+    font-size: 18px;
+    font-weight: normal;
+    color: var(--dark-wood);
+    margin-bottom: 20px;
+  }
+
+  .form-group { margin-bottom: 16px; }
+  .form-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--warm-gray);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    background: var(--cream);
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    color: var(--black);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    padding: 9px 12px;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+
+  .form-group textarea { min-height: 80px; resize: vertical; }
+
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    border-color: var(--rust);
+    outline: none;
+  }
+
+  .modal-footer {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  .budget-summary {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 0;
+    margin-bottom: 24px;
+    overflow: hidden;
+  }
+
+  .budget-cell {
+    border-right: 1px solid var(--border);
+    padding: 16px 20px;
+  }
+
+  .budget-cell:last-child { border-right: none; }
+  .budget-label { font-size: 11px; color: var(--warm-gray); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 6px; }
+  .budget-value { font-family: var(--font); font-size: 22px; color: var(--dark-wood); }
+  .budget-value.spent { color: var(--rust); }
+
+  .empty-state {
+    color: var(--warm-gray);
+    font-size: 13px;
+    padding: 32px;
+    text-align: center;
+  }
+
+  .notes-area {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.7;
+    min-height: 300px;
+    padding: 20px;
+    resize: vertical;
+    width: 100%;
+    color: var(--black);
+  }
+
+  .notes-area:focus { border-color: var(--rust); outline: none; }
+
+  .toast {
+    background: var(--dark-wood);
+    border-radius: 6px;
+    bottom: 24px;
+    color: var(--cream);
+    display: none;
+    font-size: 13px;
+    padding: 10px 18px;
+    position: fixed;
+    right: 24px;
+    z-index: 300;
+  }
+
+  .toast.show { display: block; }
+
+  @media (max-width: 600px) {
+    main { padding: 16px; }
+    .shopping-table th:nth-child(3),
+    .shopping-table td:nth-child(3),
+    .shopping-table th:nth-child(4),
+    .shopping-table td:nth-child(4) { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>1C <span>Tracker</span></h1>
+  <button class="drive-btn" onclick="toggleDrive()">
+    <div class="drive-dot" id="driveDot"></div>
+    <span id="driveLabel">Connect Drive</span>
+  </button>
+</header>
+
+<nav>
+  <button class="active" onclick="switchTab('overview', this)">Overview</button>
+  <button onclick="switchTab('shopping', this)">Shopping</button>
+  <button onclick="switchTab('todos', this)">To Do</button>
+  <button onclick="switchTab('inspo', this)">Inspiration</button>
+  <button onclick="switchTab('notes', this)">Notes</button>
+</nav>
+
+<main>
+
+  <!-- OVERVIEW -->
+  <div class="tab active" id="tab-overview">
+    <div class="section-header" style="margin-bottom:20px;">
+      <h2 style="font-family:var(--font);font-size:20px;font-weight:normal;color:var(--dark-wood);">1C Tracker</h2>
+    </div>
+    <div class="room-grid" id="roomGrid"></div>
+    <div class="budget-summary" id="budgetSummary"></div>
+  </div>
+
+  <!-- SHOPPING -->
+  <div class="tab" id="tab-shopping">
+    <div class="section-header">
+      <h2>Shopping</h2>
+      <button class="btn" onclick="openShoppingModal()">+ Add item</button>
+    </div>
+    <div class="filter-row" id="shopFilters"></div>
+    <div style="background:white;border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+      <table class="shopping-table">
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Room</th>
+            <th>Price</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="shoppingBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TODOS -->
+  <div class="tab" id="tab-todos">
+    <div class="section-header">
+      <h2>To Do</h2>
+      <button class="btn" onclick="openTodoModal()">+ Add task</button>
+    </div>
+    <div class="todo-columns" id="todoColumns"></div>
+  </div>
+
+  <!-- INSPO -->
+  <div class="tab" id="tab-inspo">
+    <div class="section-header">
+      <h2>Inspiration</h2>
+    </div>
+    <div class="inspo-rooms" id="inspoRoomFilter"></div>
+    <div class="inspo-grid" id="inspoGrid"></div>
+  </div>
+
+  <!-- NOTES -->
+  <div class="tab" id="tab-notes">
+    <div class="section-header">
+      <h2>Notes</h2>
+      <button class="btn-ghost" onclick="saveNotes()">Save notes</button>
+    </div>
+    <textarea class="notes-area" id="notesArea" placeholder="Running notes, decisions, measurements, contractor info..."></textarea>
+  </div>
+
+</main>
+
+<!-- SHOPPING MODAL -->
+<div class="modal-overlay" id="shoppingModal">
+  <div class="modal">
+    <h2 id="shoppingModalTitle">Add item</h2>
+    <div class="form-group">
+      <label>Item name</label>
+      <input type="text" id="sName" placeholder="e.g. Loloi Bleecker rug 8x10">
+    </div>
+    <div class="form-group">
+      <label>Room</label>
+      <select id="sRoom"></select>
+    </div>
+    <div class="form-group">
+      <label>Price</label>
+      <input type="number" id="sPrice" placeholder="0.00" step="0.01">
+    </div>
+    <div class="form-group">
+      <label>Link</label>
+      <input type="url" id="sLink" placeholder="https://...">
+    </div>
+    <div class="form-group">
+      <label>Notes</label>
+      <textarea id="sNotes" placeholder="Size, color, variant..."></textarea>
+    </div>
+    <div class="form-group">
+      <label>Status</label>
+      <select id="sStatus">
+        <option value="to-buy">To buy</option>
+        <option value="ordered">Ordered</option>
+        <option value="arrived">Arrived</option>
+        <option value="skip">Skip</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('shoppingModal')">Cancel</button>
+      <button class="btn" onclick="saveShoppingItem()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- TODO MODAL -->
+<div class="modal-overlay" id="todoModal">
+  <div class="modal">
+    <h2>Add task</h2>
+    <div class="form-group">
+      <label>Task</label>
+      <input type="text" id="tTitle" placeholder="e.g. Order Newport poster">
+    </div>
+    <div class="form-group">
+      <label>Room</label>
+      <select id="tRoom"></select>
+    </div>
+    <div class="form-group">
+      <label>Priority</label>
+      <select id="tPriority">
+        <option value="high">High</option>
+        <option value="medium" selected>Medium</option>
+        <option value="low">Low</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Notes</label>
+      <textarea id="tNotes" placeholder="Optional details..."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('todoModal')">Cancel</button>
+      <button class="btn" onclick="saveTodoItem()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- INSPO MODAL -->
+<div class="modal-overlay" id="inspoModal">
+  <div class="modal">
+    <h2>Add inspiration</h2>
+    <div class="form-group">
+      <label>Title</label>
+      <input type="text" id="iTitle" placeholder="e.g. Living room rug reference">
+    </div>
+    <div class="form-group">
+      <label>Room</label>
+      <select id="iRoom"></select>
+    </div>
+    <div class="form-group">
+      <label>Image URL or upload</label>
+      <input type="url" id="iUrl" placeholder="https://...">
+    </div>
+    <div class="form-group">
+      <label>Notes</label>
+      <textarea id="iNotes" placeholder="What you like about this..."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('inspoModal')">Cancel</button>
+      <button class="btn" onclick="saveInspoItem()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const ROOMS = ['Living Room','Bedroom','Kitchen','Bathroom','Entryway','General'];
+const CLIENT_ID = '611725188556-24rhq30qu354vpijqodqaq1cdvd194gs.apps.googleusercontent.com';
+const API_KEY = 'AIzaSyDFpGXdG2E6_cBiDh7Xz0va8Peh53YBQwk';
+const SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
+const FILE_NAME = '1c_tracker_data.json';
+
+let data = {
+  shopping: [],
+  todos: [],
+  inspo: [],
+  notes: '',
+  budget: {}
+};
+
+let editingShoppingId = null;
+let driveFileId = null;
+let tokenClient = null;
+let gapiInited = false;
+let gisInited = false;
+let activeShopFilter = 'all';
+let activeInspoRoom = 'all';
+
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2);
+}
+
+function load() {
+  const saved = localStorage.getItem('1c_tracker');
+  if (saved) {
+    try { data = { ...data, ...JSON.parse(saved) }; } catch(e) {}
+  }
+}
+
+function save() {
+  localStorage.setItem('1c_tracker', JSON.stringify(data));
+  driveSave();
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  if (btn) btn.classList.add('active');
+  render();
+}
+
+function render() {
+  renderOverview();
+  renderShopping();
+  renderTodos();
+  renderInspo();
+  renderNotes();
+}
+
+function renderOverview() {
+  const grid = document.getElementById('roomGrid');
+  const rooms = ROOMS.filter(r => r !== 'General');
+  grid.innerHTML = rooms.map(room => {
+    const todos = data.todos.filter(t => t.room === room);
+    const done = todos.filter(t => t.done).length;
+    const pct = todos.length ? Math.round(done / todos.length * 100) : 0;
+    const shopping = data.shopping.filter(s => s.room === room);
+    const arrived = shopping.filter(s => s.status === 'arrived').length;
+    return `<div class="room-card" onclick="goToRoom('${room}')">
+      <h3>${room}</h3>
+      <div class="room-progress"><div class="room-progress-fill" style="width:${pct}%"></div></div>
+      <div class="room-stats">
+        <span><strong>${done}/${todos.length}</strong> tasks done</span>
+        <span><strong>${arrived}/${shopping.length}</strong> items arrived</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  const totalBudget = data.shopping.reduce((s, i) => s + (parseFloat(i.price) || 0), 0);
+  const spent = data.shopping.filter(i => i.status === 'arrived').reduce((s, i) => s + (parseFloat(i.price) || 0), 0);
+  const ordered = data.shopping.filter(i => i.status === 'ordered').reduce((s, i) => s + (parseFloat(i.price) || 0), 0);
+
+  document.getElementById('budgetSummary').innerHTML = `
+    <div class="budget-cell"><div class="budget-label">Total planned</div><div class="budget-value">$${totalBudget.toFixed(0)}</div></div>
+    <div class="budget-cell"><div class="budget-label">Spent</div><div class="budget-value spent">$${spent.toFixed(0)}</div></div>
+    <div class="budget-cell"><div class="budget-label">Ordered</div><div class="budget-value" style="color:var(--mid-wood)">$${ordered.toFixed(0)}</div></div>
+    <div class="budget-cell"><div class="budget-label">Remaining</div><div class="budget-value">$${(totalBudget - spent - ordered).toFixed(0)}</div></div>
+  `;
+}
+
+function goToRoom(room) {
+  const btn = document.querySelector('nav button:nth-child(2)');
+  switchTab('shopping', btn);
+  activeShopFilter = room;
+  renderShopping();
+}
+
+function renderShopping() {
+  const filters = ['all', ...ROOMS];
+  document.getElementById('shopFilters').innerHTML = filters.map(f =>
+    `<button class="filter-btn ${activeShopFilter === f ? 'active' : ''}" onclick="setShopFilter('${f}')">${f === 'all' ? 'All rooms' : f}</button>`
+  ).join('');
+
+  let items = data.shopping;
+  if (activeShopFilter !== 'all') items = items.filter(i => i.room === activeShopFilter);
+
+  if (!items.length) {
+    document.getElementById('shoppingBody').innerHTML = `<tr><td colspan="5" class="empty-state">No items yet — add your first purchase above</td></tr>`;
+    return;
+  }
+
+  document.getElementById('shoppingBody').innerHTML = items.map(item => {
+    const statusMap = { 'to-buy': 'To buy', 'ordered': 'Ordered', 'arrived': 'Arrived', 'skip': 'Skip' };
+    return `<tr>
+      <td>
+        <div class="item-name">${item.name}</div>
+        ${item.notes ? `<div class="item-notes">${item.notes}</div>` : ''}
+        ${item.link ? `<a href="${item.link}" target="_blank" class="item-link">View item ↗</a>` : ''}
+      </td>
+      <td><span class="todo-room-tag">${item.room}</span></td>
+      <td class="price">${item.price ? '$' + parseFloat(item.price).toFixed(0) : '—'}</td>
+      <td><span class="status-badge status-${item.status}">${statusMap[item.status] || item.status}</span></td>
+      <td>
+        <div class="action-btns">
+          <button class="icon-btn" onclick="cycleStatus('${item.id}')" title="Change status">↻</button>
+          <button class="icon-btn" onclick="editShoppingItem('${item.id}')" title="Edit">✎</button>
+          <button class="icon-btn danger" onclick="deleteShoppingItem('${item.id}')" title="Delete">×</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function setShopFilter(f) {
+  activeShopFilter = f;
+  renderShopping();
+}
+
+function cycleStatus(id) {
+  const item = data.shopping.find(i => i.id === id);
+  if (!item) return;
+  const cycle = ['to-buy', 'ordered', 'arrived', 'skip'];
+  const idx = cycle.indexOf(item.status);
+  item.status = cycle[(idx + 1) % cycle.length];
+  save();
+  renderShopping();
+  renderOverview();
+}
+
+function renderTodos() {
+  const priorities = [
+    { key: 'high', label: 'High priority' },
+    { key: 'medium', label: 'Medium priority' },
+    { key: 'low', label: 'Low priority' },
+    { key: 'done', label: 'Done' }
+  ];
+
+  document.getElementById('todoColumns').innerHTML = priorities.map(p => {
+    let items;
+    if (p.key === 'done') {
+      items = data.todos.filter(t => t.done);
+    } else {
+      items = data.todos.filter(t => !t.done && t.priority === p.key);
+    }
+    return `<div class="todo-col">
+      <div class="todo-col-header">
+        <h3>${p.label}</h3>
+        ${items.length ? `<span class="todo-count">${items.length}</span>` : ''}
+      </div>
+      <div class="todo-list">
+        ${items.length ? items.map(t => `
+          <div class="todo-item">
+            <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTodo('${t.id}')">
+            <div class="todo-text">
+              <div class="todo-title ${t.done ? 'done' : ''}">${t.title}</div>
+              <div class="todo-meta">
+                <span class="todo-room-tag">${t.room}</span>
+                ${t.notes ? ` · ${t.notes}` : ''}
+              </div>
+            </div>
+            <button class="icon-btn danger" onclick="deleteTodo('${t.id}')">×</button>
+          </div>
+        `).join('') : `<div class="empty-state" style="padding:16px;font-size:12px;">Nothing here</div>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleTodo(id) {
+  const t = data.todos.find(t => t.id === id);
+  if (t) { t.done = !t.done; save(); renderTodos(); renderOverview(); }
+}
+
+function deleteTodo(id) {
+  data.todos = data.todos.filter(t => t.id !== id);
+  save();
+  renderTodos();
+  renderOverview();
+}
+
+function renderInspo() {
+  const rooms = ['all', ...ROOMS];
+  document.getElementById('inspoRoomFilter').innerHTML = rooms.map(r =>
+    `<button class="filter-btn ${activeInspoRoom === r ? 'active' : ''}" onclick="setInspoRoom('${r}')">${r === 'all' ? 'All rooms' : r}</button>`
+  ).join('') + `<button class="btn" style="margin-left:auto" onclick="openInspoModal()">+ Add image</button>`;
+
+  let items = data.inspo;
+  if (activeInspoRoom !== 'all') items = items.filter(i => i.room === activeInspoRoom);
+
+  if (!items.length) {
+    document.getElementById('inspoGrid').innerHTML = `<div class="upload-zone" onclick="openInspoModal()"><p>+ Add inspiration images</p><p style="font-size:11px">Room mockups, product shots, color references</p></div>`;
+    return;
+  }
+
+  document.getElementById('inspoGrid').innerHTML = items.map(item => `
+    <div class="inspo-card">
+      ${item.url ? `<img src="${item.url}" alt="${item.title}" onerror="this.style.display='none'">` : ''}
+      <button class="inspo-delete" onclick="deleteInspo('${item.id}')">×</button>
+      <div class="inspo-card-body">
+        <div class="inspo-card-title">${item.title}</div>
+        <div class="inspo-card-meta">${item.room}${item.notes ? ' · ' + item.notes : ''}</div>
+      </div>
+    </div>
+  `).join('') + `<div class="upload-zone" onclick="openInspoModal()"><p>+ Add image</p></div>`;
+}
+
+function setInspoRoom(r) {
+  activeInspoRoom = r;
+  renderInspo();
+}
+
+function renderNotes() {
+  const el = document.getElementById('notesArea');
+  if (el && !el.dataset.loaded) {
+    el.value = data.notes || '';
+    el.dataset.loaded = '1';
+  }
+}
+
+function saveNotes() {
+  data.notes = document.getElementById('notesArea').value;
+  save();
+  showToast('Notes saved');
+}
+
+function populateRoomSelects() {
+  ['sRoom', 'tRoom', 'iRoom'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = ROOMS.map(r => `<option value="${r}">${r}</option>`).join('');
+  });
+}
+
+function openShoppingModal(id) {
+  editingShoppingId = id || null;
+  populateRoomSelects();
+  if (id) {
+    const item = data.shopping.find(i => i.id === id);
+    if (item) {
+      document.getElementById('shoppingModalTitle').textContent = 'Edit item';
+      document.getElementById('sName').value = item.name;
+      document.getElementById('sRoom').value = item.room;
+      document.getElementById('sPrice').value = item.price || '';
+      document.getElementById('sLink').value = item.link || '';
+      document.getElementById('sNotes').value = item.notes || '';
+      document.getElementById('sStatus').value = item.status;
+    }
+  } else {
+    document.getElementById('shoppingModalTitle').textContent = 'Add item';
+    document.getElementById('sName').value = '';
+    document.getElementById('sPrice').value = '';
+    document.getElementById('sLink').value = '';
+    document.getElementById('sNotes').value = '';
+    document.getElementById('sStatus').value = 'to-buy';
+  }
+  document.getElementById('shoppingModal').classList.add('open');
+  document.getElementById('sName').focus();
+}
+
+function editShoppingItem(id) { openShoppingModal(id); }
+
+function saveShoppingItem() {
+  const name = document.getElementById('sName').value.trim();
+  if (!name) return;
+  if (editingShoppingId) {
+    const item = data.shopping.find(i => i.id === editingShoppingId);
+    if (item) {
+      item.name = name;
+      item.room = document.getElementById('sRoom').value;
+      item.price = document.getElementById('sPrice').value;
+      item.link = document.getElementById('sLink').value;
+      item.notes = document.getElementById('sNotes').value;
+      item.status = document.getElementById('sStatus').value;
+    }
+  } else {
+    data.shopping.push({
+      id: uid(),
+      name,
+      room: document.getElementById('sRoom').value,
+      price: document.getElementById('sPrice').value,
+      link: document.getElementById('sLink').value,
+      notes: document.getElementById('sNotes').value,
+      status: document.getElementById('sStatus').value
+    });
+  }
+  save();
+  closeModal('shoppingModal');
+  renderShopping();
+  renderOverview();
+  showToast(editingShoppingId ? 'Item updated' : 'Item added');
+}
+
+function deleteShoppingItem(id) {
+  if (!confirm('Delete this item?')) return;
+  data.shopping = data.shopping.filter(i => i.id !== id);
+  save();
+  renderShopping();
+  renderOverview();
+}
+
+function openTodoModal() {
+  populateRoomSelects();
+  document.getElementById('tTitle').value = '';
+  document.getElementById('tNotes').value = '';
+  document.getElementById('tPriority').value = 'medium';
+  document.getElementById('todoModal').classList.add('open');
+  document.getElementById('tTitle').focus();
+}
+
+function saveTodoItem() {
+  const title = document.getElementById('tTitle').value.trim();
+  if (!title) return;
+  data.todos.push({
+    id: uid(),
+    title,
+    room: document.getElementById('tRoom').value,
+    priority: document.getElementById('tPriority').value,
+    notes: document.getElementById('tNotes').value,
+    done: false
+  });
+  save();
+  closeModal('todoModal');
+  renderTodos();
+  renderOverview();
+  showToast('Task added');
+}
+
+function openInspoModal() {
+  populateRoomSelects();
+  document.getElementById('iTitle').value = '';
+  document.getElementById('iUrl').value = '';
+  document.getElementById('iNotes').value = '';
+  document.getElementById('inspoModal').classList.add('open');
+  document.getElementById('iTitle').focus();
+}
+
+function saveInspoItem() {
+  const title = document.getElementById('iTitle').value.trim();
+  if (!title) return;
+  data.inspo.push({
+    id: uid(),
+    title,
+    room: document.getElementById('iRoom').value,
+    url: document.getElementById('iUrl').value,
+    notes: document.getElementById('iNotes').value
+  });
+  save();
+  closeModal('inspoModal');
+  renderInspo();
+  showToast('Image added');
+}
+
+function deleteInspo(id) {
+  data.inspo = data.inspo.filter(i => i.id !== id);
+  save();
+  renderInspo();
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+});
+
+let driveSaveTimeout = null;
+function driveSave() {
+  if (!driveFileId) return;
+  clearTimeout(driveSaveTimeout);
+  driveSaveTimeout = setTimeout(() => {
+    setDriveStatus('syncing');
+    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify({ name: FILE_NAME })], { type: 'application/json' }));
+    form.append('file', blob);
+    fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=multipart`, {
+      method: 'PATCH',
+      headers: { Authorization: 'Bearer ' + gapi.client.getToken().access_token },
+      body: form
+    }).then(() => setDriveStatus('connected')).catch(() => setDriveStatus('error'));
+  }, 2000);
+}
+
+function setDriveStatus(s) {
+  const dot = document.getElementById('driveDot');
+  const label = document.getElementById('driveLabel');
+  dot.className = 'drive-dot ' + s;
+  if (s === 'connected') label.textContent = 'Drive synced';
+  else if (s === 'syncing') label.textContent = 'Saving...';
+  else if (s === 'error') label.textContent = 'Sync error';
+  else label.textContent = 'Connect Drive';
+}
+
+function toggleDrive() {
+  if (driveFileId) return;
+  if (!gapiInited || !gisInited) {
+    showToast('Google APIs still loading, try again in a moment');
+    return;
+  }
+  tokenClient.requestAccessToken({ prompt: 'consent' });
+}
+
+async function driveInit() {
+  await gapi.client.init({ apiKey: API_KEY, discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'] });
+  gapiInited = true;
+  maybeEnableDrive();
+}
+
+function maybeEnableDrive() {
+  if (gapiInited && gisInited) setDriveStatus('');
+}
+
+function initGapi() {
+  gapi.load('client', driveInit);
+}
+
+function initGis() {
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: async (resp) => {
+      if (resp.error) { setDriveStatus('error'); return; }
+      setDriveStatus('syncing');
+      await driveConnect();
+    }
+  });
+  gisInited = true;
+  maybeEnableDrive();
+}
+
+async function driveConnect() {
+  try {
+    const list = await gapi.client.drive.files.list({
+      spaces: 'appDataFolder',
+      q: `name='${FILE_NAME}'`,
+      fields: 'files(id)',
+      orderBy: 'modifiedTime desc'
+    });
+    if (list.result.files.length) {
+      driveFileId = list.result.files[0].id;
+      const file = await gapi.client.drive.files.get({ fileId: driveFileId, alt: 'media' });
+      const remote = typeof file.result === 'string' ? JSON.parse(file.result) : file.result;
+      data = { ...data, ...remote };
+      localStorage.setItem('1c_tracker', JSON.stringify(data));
+      document.getElementById('notesArea').dataset.loaded = '';
+      render();
+      setDriveStatus('connected');
+      showToast('Drive connected — data loaded');
+    } else {
+      const meta = await gapi.client.drive.files.create({
+        resource: { name: FILE_NAME, parents: ['appDataFolder'] },
+        fields: 'id'
+      });
+      driveFileId = meta.result.id;
+      driveSave();
+      setDriveStatus('connected');
+      showToast('Drive connected — new file created');
+    }
+  } catch(e) {
+    setDriveStatus('error');
+    showToast('Drive connection failed');
+  }
+}
+
+function tryInitApis() {
+  if (typeof gapi !== 'undefined') initGapi();
+  else setTimeout(tryInitApis, 400);
+}
+
+function tryInitGis() {
+  if (typeof google !== 'undefined' && google.accounts) initGis();
+  else setTimeout(tryInitGis, 400);
+}
+
+load();
+render();
+tryInitApis();
+tryInitGis();
+</script>
+</body>
+</html>
