@@ -391,6 +391,7 @@
   }
 
   .inspo-card {
+    cursor: zoom-in;
     background: white;
     border: 1px solid var(--border);
     border-radius: 8px;
@@ -774,8 +775,15 @@
       <select id="iRoom"></select>
     </div>
     <div class="form-group">
-      <label>Image URL or upload</label>
-      <input type="url" id="iUrl" placeholder="https://...">
+      <label>Image</label>
+      <div id="iUploadPreview" style="display:none;margin-bottom:8px;"><img id="iPreviewImg" style="max-height:120px;border-radius:6px;border:1px solid var(--border);" alt="preview"></div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="url" id="iUrl" placeholder="Paste image URL..." style="flex:1;">
+        <label style="background:var(--cream-dark);border:1px solid var(--border-strong);border-radius:6px;color:var(--dark-wood);cursor:pointer;font-size:12px;font-weight:500;padding:9px 14px;white-space:nowrap;text-transform:none;display:block;">
+          Upload
+          <input type="file" id="iFile" accept="image/*" style="display:none;" onchange="handleInspoUpload(this)">
+        </label>
+      </div>
     </div>
     <div class="form-group">
       <label>Notes</label>
@@ -1008,9 +1016,9 @@ function renderInspo() {
   }
 
   document.getElementById('inspoGrid').innerHTML = items.map(item => `
-    <div class="inspo-card">
+    <div class="inspo-card" onclick="openLightbox('${item.id}')">
       ${item.url ? `<img src="${item.url}" alt="${item.title}" onerror="this.style.display='none'">` : ''}
-      <button class="inspo-delete" onclick="deleteInspo('${item.id}')">×</button>
+      <button class="inspo-delete" onclick="event.stopPropagation();deleteInspo('${item.id}')">×</button>
       <div class="inspo-card-body">
         <div class="inspo-card-title">${item.title}</div>
         <div class="inspo-card-meta">${item.room}${item.notes ? ' · ' + item.notes : ''}</div>
@@ -1139,11 +1147,31 @@ function saveTodoItem() {
   showToast('Task added');
 }
 
+let inspoUploadedBase64 = null;
+
+function handleInspoUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    inspoUploadedBase64 = e.target.result;
+    document.getElementById('iPreviewImg').src = inspoUploadedBase64;
+    document.getElementById('iUploadPreview').style.display = 'block';
+    document.getElementById('iUrl').value = '';
+    document.getElementById('iUrl').placeholder = 'Using uploaded image';
+  };
+  reader.readAsDataURL(file);
+}
+
 function openInspoModal() {
   populateRoomSelects();
+  inspoUploadedBase64 = null;
   document.getElementById('iTitle').value = '';
   document.getElementById('iUrl').value = '';
+  document.getElementById('iUrl').placeholder = 'Paste image URL...';
   document.getElementById('iNotes').value = '';
+  document.getElementById('iUploadPreview').style.display = 'none';
+  document.getElementById('iFile').value = '';
   document.getElementById('inspoModal').classList.add('open');
   document.getElementById('iTitle').focus();
 }
@@ -1151,13 +1179,15 @@ function openInspoModal() {
 function saveInspoItem() {
   const title = document.getElementById('iTitle').value.trim();
   if (!title) return;
+  const url = inspoUploadedBase64 || document.getElementById('iUrl').value;
   data.inspo.push({
     id: uid(),
     title,
     room: document.getElementById('iRoom').value,
-    url: document.getElementById('iUrl').value,
+    url,
     notes: document.getElementById('iNotes').value
   });
+  inspoUploadedBase64 = null;
   save();
   closeModal('inspoModal');
   renderInspo();
@@ -1178,9 +1208,28 @@ document.querySelectorAll('.modal-overlay').forEach(m => {
   m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
 });
 
+
+function openLightbox(id) {
+  const item = data.inspo.find(i => i.id === id);
+  if (!item || !item.url) return;
+  document.getElementById('lightboxImg').src = item.url;
+  document.getElementById('lightboxTitle').textContent = item.title;
+  document.getElementById('lightboxMeta').textContent = item.room + (item.notes ? ' · ' + item.notes : '');
+  const lb = document.getElementById('lightbox');
+  lb.style.display = 'flex';
+}
+
+function closeLightbox() {
+  document.getElementById('lightbox').style.display = 'none';
+}
+
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+  if (e.key === 'Escape') {
+    closeLightbox();
+    document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+  }
 });
+
 
 let driveSaveTimeout = null;
 function driveSave() {
@@ -1296,5 +1345,15 @@ render();
 tryInitApis();
 tryInitGis();
 </script>
+
+<!-- LIGHTBOX -->
+<div id="lightbox" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(26,26,26,0.92);z-index:500;align-items:center;justify-content:center;flex-direction:column;gap:16px;" onclick="closeLightbox()">
+  <img id="lightboxImg" style="max-width:90vw;max-height:80vh;border-radius:8px;object-fit:contain;" alt="">
+  <div style="color:rgba(245,240,232,0.9);text-align:center;">
+    <div id="lightboxTitle" style="font-family:Georgia,serif;font-size:16px;margin-bottom:4px;"></div>
+    <div id="lightboxMeta" style="font-size:12px;color:rgba(245,240,232,0.6);"></div>
+  </div>
+  <button onclick="closeLightbox()" style="position:fixed;top:20px;right:24px;background:none;border:none;color:rgba(245,240,232,0.7);font-size:28px;cursor:pointer;line-height:1;">×</button>
+</div>
 </body>
 </html>
