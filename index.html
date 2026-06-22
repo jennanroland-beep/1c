@@ -608,6 +608,76 @@
     .shopping-table th:nth-child(4),
     .shopping-table td:nth-child(4) { display: none; }
   }
+
+  /* MOVING */
+  .pack-phase {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--warm-gray);
+    margin: 1.5rem 0 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+  .pack-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 18px;
+    margin-bottom: 10px;
+    transition: opacity 0.2s;
+  }
+  .pack-card.today { border-left: 3px solid var(--rust); }
+  .pack-card.done { opacity: 0.6; }
+  .pack-entry {
+    background: var(--cream-dark);
+    border-left: 3px solid var(--rust);
+    padding: 10px 14px;
+    margin: 10px 0;
+  }
+  .pack-task {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 7px 0;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+  }
+  .pack-task:last-child { border-bottom: none; }
+  .pack-task input[type="checkbox"] {
+    accent-color: var(--rust);
+    cursor: pointer;
+    flex-shrink: 0;
+    height: 16px;
+    margin-top: 2px;
+    width: 16px;
+    pointer-events: none;
+  }
+  .pack-task label {
+    font-size: 14px;
+    color: var(--warm-gray);
+    line-height: 1.5;
+    cursor: pointer;
+    user-select: none;
+  }
+  .pack-task.done label { text-decoration: line-through; opacity: 0.6; }
+  .pack-reward {
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin-top: 12px;
+    font-size: 13px;
+  }
+  .pack-reward.locked { background: var(--cream-dark); color: var(--warm-gray); }
+  .pack-reward.unlocked { background: #EAF4EE; color: #2D7A47; }
+  .pack-pill {
+    font-size: 11px;
+    background: var(--cream-dark);
+    color: var(--warm-gray);
+    padding: 3px 8px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
 </style>
 </head>
 <body>
@@ -626,6 +696,7 @@
   <button onclick="switchTab('todos', this)">To Do</button>
   <button onclick="switchTab('inspo', this)">Inspiration</button>
   <button onclick="switchTab('notes', this)">Notes</button>
+  <button onclick="switchTab('moving', this)">Moving</button>
 </nav>
 
 <main>
@@ -687,6 +758,20 @@
       <button class="btn-ghost" onclick="saveNotes()">Save notes</button>
     </div>
     <textarea class="notes-area" id="notesArea" placeholder="Running notes, decisions, measurements, contractor info..."></textarea>
+  </div>
+  <!-- MOVING -->
+  <div class="tab" id="tab-moving">
+    <div class="section-header" style="align-items:flex-start;margin-bottom:8px;">
+      <h2>Moving plan</h2>
+      <div style="text-align:right;">
+        <div style="font-size:12px;color:var(--warm-gray);margin-bottom:3px;">Move day: Fri Jul 10</div>
+        <div id="packMeta" style="font-size:13px;color:var(--dark-wood);"></div>
+      </div>
+    </div>
+    <div style="background:var(--cream-dark);border-radius:3px;height:3px;overflow:hidden;margin-bottom:24px;">
+      <div id="packProgress" style="height:100%;width:0%;background:var(--rust);border-radius:3px;transition:width 0.4s;"></div>
+    </div>
+    <div id="packContainer"></div>
   </div>
 
 </main>
@@ -810,7 +895,8 @@ let data = {
   todos: [],
   inspo: [],
   notes: '',
-  budget: {}
+  budget: {},
+  packingState: {}
 };
 
 let editingShoppingId = null;
@@ -858,6 +944,7 @@ function render() {
   renderTodos();
   renderInspo();
   renderNotes();
+  renderMoving();
 }
 
 function renderOverview() {
@@ -1338,6 +1425,144 @@ function tryInitApis() {
 function tryInitGis() {
   if (typeof google !== 'undefined' && google.accounts) initGis();
   else setTimeout(tryInitGis, 400);
+}
+
+// ── MOVING ───────────────────────────────────────────────────────────────────
+
+const PACK_MOVE_DATE = new Date('2026-07-10');
+
+const PACK_QUESTS = [
+  {id:1, date:'2026-06-22', label:'Mon Jun 22', name:'The Outer Layer', zones:['Coat closet'], time:'15 min',
+   entry:'Walk to the coat closet. Open it. Put your hand on the jacket closest to you.',
+   tasks:['Pull every coat and jacket off the rod','Sort into keep vs. donate piles','Bag or box the keepers','Check shelves and floor for scarves, hats, and extras','Label it and move it to your packed zone'],
+   reward:'One episode of whatever you want. Zero packing thoughts for the rest of the night.'},
+  {id:2, date:'2026-06-25', label:'Thu Jun 25', name:'The Underground + Shoe Edit', zones:['Under-bed storage','Shoes'], time:'30 min',
+   entry:'Kneel next to the bed. Reach under and pull out the first thing your hand touches.',
+   tasks:['Pull everything out from under the bed','Toss or donate anything you forgot you owned','Box up what you\'re keeping from under the bed','Now pivot to shoes — pull them all out','Donate anything unworn in a year, bag or box the rest in pairs'],
+   reward:'Glass of wine. Sit down. Do absolutely nothing.'},
+  {id:3, date:'2026-06-30', label:'Tue Jun 30', name:'Auggie\'s World + The Gallery', zones:['Storage closet','Walls + TV console'], time:'35 min',
+   entry:'Open the storage closet. Grab Auggie\'s food bag or bin. Set it in the hallway.',
+   tasks:['Pull out all of Auggie\'s stuff (food, leashes, toys, meds)','Toss expired or wrecked items, box up what\'s coming to 1C','Clear remaining storage closet items','Now pivot: clear everything out of the TV console','Take down everything on the walls — room by room, wrap fragile frames in towels'],
+   reward:'Couch time with Auggie. He supervised all of it.'},
+  {id:4, date:'2026-07-01', label:'Wed Jul 1', name:'Pantry Purge', zones:['Pantry'], time:'25 min',
+   entry:'Open the pantry. Grab the one thing you know you\'re not eating before July 10.',
+   tasks:['Pull everything off shelves onto the counter','Throw out anything expired or nearly empty','Set aside what you\'ll actually use this week — don\'t pack it yet','Box up everything else (sealed, shelf-stable)','Label box "pantry — open soon"'],
+   reward:'Order from your favorite spot. You just cleared a whole room.'},
+  {id:5, date:'2026-07-02', label:'Thu Jul 2', name:'Clean Sweep', zones:['Bathroom','Decor'], time:'35 min',
+   entry:'Open the medicine cabinet. Grab everything expired or that you\'ve had for over a year.',
+   tasks:['Clear the medicine cabinet — toss expired, box what\'s staying','Pull out under-sink items — toss empties','Box all hair and skincare, leave out only what you\'ll use before July 10','Now pivot: walk every room and collect all decorative objects','Donate or toss anything that wouldn\'t go in 1C, wrap fragile pieces in t-shirts, box and label "decor"'],
+   reward:'July 4th weekend starts tomorrow. Fully off the clock.'},
+  {id:6, date:'2026-07-06', label:'Mon Jul 6', name:'Drawer Archaeology', zones:['Dressers'], time:'30 min',
+   entry:'Open the top drawer of your main dresser. Pull out everything that is not clothing.',
+   tasks:['Clear the junk accumulation first (random non-clothing stuff)','Go drawer by drawer — pack what you\'re not wearing this week','Leave out only enough for the days until July 10','Label dresser boxes by category (loungewear, workout, etc.)'],
+   reward:'That show you\'ve been putting off. Watch it now.'},
+  {id:7, date:'2026-07-07', label:'Tue Jul 7', name:'The Wardrobe', zones:['Clothing closet'], time:'45 min',
+   entry:'Stand in front of your closet. Grab the 5 items hanging farthest to the left. Pull them out.',
+   tasks:['Work left to right, 5 items at a time — don\'t think, just pull','Quick call only: wear before July 10, or box it','Group by type as you go: tops, bottoms, dresses, jackets','Pack off-season and occasion pieces first','Leave out only 1–2 weeks of everyday outfits'],
+   reward:'This was the big one. Full night off — delivery, couch, Auggie, done.'},
+  {id:8, date:'2026-07-08', label:'Wed Jul 8', name:'Kitchen: First Wave', zones:['Kitchen (non-essentials)'], time:'40 min',
+   entry:'Open one cabinet that does NOT have your everyday dishes. Pull out anything you haven\'t touched in 3+ months.',
+   tasks:['Pack appliances you won\'t use this week (blender, extra pots, etc.)','Box up non-everyday dishes and glasses','Wrap fragile items in kitchen towels — uses up your linens too','Toss any food storage containers without matching lids','Leave: 1 pan, 1 pot, everyday plates and cups, utensils you need'],
+   reward:'Glass of wine. The apartment is almost packed.'},
+  {id:9, date:'2026-07-09', label:'Thu Jul 9', name:'The Final Push', zones:['Kitchen essentials + final sweep'], time:'30 min',
+   entry:'Get one box or bag and label it "OPEN FIRST." This is your first-night survival kit.',
+   tasks:['Pack the OPEN FIRST box: coffee maker or kettle, 1 mug, 1 plate, fork and knife, dish soap, phone charger, TP, a snack','Pack all remaining kitchen items','Walk every room — grab anything still sitting out','Final check: top shelves, backs of closets, under sinks'],
+   reward:'Tomorrow you get a whole new apartment. Tonight: whatever you want.'}
+];
+
+function packToday() { return new Date().toISOString().split('T')[0]; }
+
+function packDaysLeft() {
+  const n = new Date(); n.setHours(0,0,0,0);
+  return Math.max(0, Math.ceil((PACK_MOVE_DATE - n) / 864e5));
+}
+
+function packIsDone(q) {
+  const ps = data.packingState || {};
+  return q.tasks.every((_, i) => ps[q.id + '-' + i]);
+}
+
+function packCountDone() { return PACK_QUESTS.filter(packIsDone).length; }
+
+function updatePackHeader() {
+  const d = packDaysLeft();
+  const c = packCountDone();
+  const meta = document.getElementById('packMeta');
+  if (meta) {
+    const daysStr = d === 0 ? 'Moving day!' : d + (d === 1 ? ' day to go' : ' days to go');
+    meta.textContent = daysStr + ' \u00b7 ' + c + ' / 9 quests done';
+  }
+  const bar = document.getElementById('packProgress');
+  if (bar) bar.style.width = (c / 9 * 100) + '%';
+}
+
+function packCardHTML(q) {
+  const isToday = q.date === packToday();
+  const done = packIsDone(q);
+  const ps = data.packingState || {};
+
+  const pills = q.zones.map(z => '<span class="pack-pill">' + z + '</span>').join('');
+
+  const tasks = q.tasks.map((task, i) => {
+    const checked = !!ps[q.id + '-' + i];
+    return '<div class="pack-task' + (checked ? ' done' : '') + '" onclick="togglePackTask(' + q.id + ',' + i + ')">'
+      + '<input type="checkbox"' + (checked ? ' checked' : '') + ' />'
+      + '<label>' + task + '</label>'
+      + '</div>';
+  }).join('');
+
+  const rewardLabel = done ? 'Reward unlocked' : 'Complete quest to unlock';
+  const rewardText = done ? q.reward : '&middot;&middot;&middot;';
+
+  return '<div class="pack-card' + (isToday ? ' today' : '') + (done ? ' done' : '') + '" id="pc' + q.id + '">'
+    + '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;">'
+    + '<div>'
+    + '<div style="font-size:11px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:' + (isToday ? 'var(--rust)' : 'var(--warm-gray)') + ';margin-bottom:3px;">' + (isToday ? '&#9654; ' : '') + q.label + '</div>'
+    + '<div style="font-family:var(--font);font-size:16px;color:var(--dark-wood);">' + q.name + '</div>'
+    + '</div>'
+    + '<div style="display:flex;gap:5px;flex-shrink:0;margin-left:12px;flex-wrap:wrap;justify-content:flex-end;">'
+    + pills
+    + '<span class="pack-pill">' + q.time + '</span>'
+    + '</div>'
+    + '</div>'
+    + '<div class="pack-entry">'
+    + '<div style="font-size:10px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:var(--dark-wood);margin-bottom:4px;">First move</div>'
+    + '<div style="font-size:13px;color:var(--black);line-height:1.5;">' + q.entry + '</div>'
+    + '</div>'
+    + '<div style="margin:10px 0;">' + tasks + '</div>'
+    + '<div class="pack-reward ' + (done ? 'unlocked' : 'locked') + '">'
+    + '<div style="font-size:10px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:3px;">' + rewardLabel + '</div>'
+    + '<div>' + rewardText + '</div>'
+    + '</div>'
+    + '</div>';
+}
+
+function togglePackTask(questId, taskIdx) {
+  if (!data.packingState) data.packingState = {};
+  const key = questId + '-' + taskIdx;
+  data.packingState[key] = !data.packingState[key];
+  save();
+  const q = PACK_QUESTS.find(x => x.id === questId);
+  const old = document.getElementById('pc' + questId);
+  if (!old) return;
+  const tmp = document.createElement('div');
+  tmp.innerHTML = packCardHTML(q);
+  old.replaceWith(tmp.firstElementChild);
+  updatePackHeader();
+}
+
+function renderMoving() {
+  const container = document.getElementById('packContainer');
+  if (!container) return;
+  let h = '';
+  h += '<div class="pack-phase">Week 1 &mdash; Jun 22 &amp; 25</div>';
+  PACK_QUESTS.slice(0, 2).forEach(q => { h += packCardHTML(q); });
+  h += '<div class="pack-phase">Week 2 &mdash; Jun 30, Jul 1 &amp; 2</div>';
+  PACK_QUESTS.slice(2, 5).forEach(q => { h += packCardHTML(q); });
+  h += '<div class="pack-phase">Week 3 &mdash; Jul 6, 7, 8 &amp; 9</div>';
+  PACK_QUESTS.slice(5).forEach(q => { h += packCardHTML(q); });
+  container.innerHTML = h;
+  updatePackHeader();
 }
 
 load();
