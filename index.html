@@ -1432,42 +1432,34 @@ function tryInitGis() {
 const PACK_MOVE_DATE = new Date('2026-07-10');
 
 const PACK_QUESTS = [
-  {id:1, date:'2026-06-22', label:'Mon Jun 22', name:'The Outer Layer', zones:['Coat closet'], time:'15 min',
-   entry:'Walk to the coat closet. Open it. Put your hand on the jacket closest to you.',
-   tasks:['Pull every coat and jacket off the rod','Sort into keep vs. donate piles','Bag or box the keepers','Check shelves and floor for scarves, hats, and extras','Label it and move it to your packed zone'],
-   reward:'One episode of whatever you want. Zero packing thoughts for the rest of the night.'},
-  {id:2, date:'2026-06-25', label:'Thu Jun 25', name:'The Underground + Shoe Edit', zones:['Under-bed storage','Shoes'], time:'30 min',
-   entry:'Kneel next to the bed. Reach under and pull out the first thing your hand touches.',
-   tasks:['Pull everything out from under the bed','Toss or donate anything you forgot you owned','Box up what you\'re keeping from under the bed','Now pivot to shoes — pull them all out','Donate anything unworn in a year, bag or box the rest in pairs'],
-   reward:'Glass of wine. Sit down. Do absolutely nothing.'},
-  {id:3, date:'2026-06-30', label:'Tue Jun 30', name:'Auggie\'s World + The Gallery', zones:['Storage closet','Walls + TV console'], time:'35 min',
-   entry:'Open the storage closet. Grab Auggie\'s food bag or bin. Set it in the hallway.',
-   tasks:['Pull out all of Auggie\'s stuff (food, leashes, toys, meds)','Toss expired or wrecked items, box up what\'s coming to 1C','Clear remaining storage closet items','Now pivot: clear everything out of the TV console','Take down everything on the walls — room by room, wrap fragile frames in towels'],
-   reward:'Couch time with Auggie. He supervised all of it.'},
-  {id:4, date:'2026-07-01', label:'Wed Jul 1', name:'Pantry Purge', zones:['Pantry'], time:'25 min',
-   entry:'Open the pantry. Grab the one thing you know you\'re not eating before July 10.',
-   tasks:['Pull everything off shelves onto the counter','Throw out anything expired or nearly empty','Set aside what you\'ll actually use this week — don\'t pack it yet','Box up everything else (sealed, shelf-stable)','Label box "pantry — open soon"'],
-   reward:'Order from your favorite spot. You just cleared a whole room.'},
-  {id:5, date:'2026-07-02', label:'Thu Jul 2', name:'Clean Sweep', zones:['Bathroom','Decor'], time:'35 min',
+  {id:1, date:'2026-07-01', label:'Wed Jul 1', name:'Finish What You Started', zones:['Under-bed','Coat closet shelves','Shoes','Walls'], time:'45 min',
+   entry:'The under-bed pile is already sorted. Grab a box right now. Fill it.',
+   tasks:['Under-bed: box up the keep pile — decisions are made, just put it in and label it','Coat closet shelves: pack anything that isn\'t hanging (accessories, extras, shelf items) — movers handle the hanging stuff','Shoes: bag up all but 2–3 pairs you\'ll actually wear this week, keep pairs together','Walk every room and take down everything still on the walls — wrap frames in towels or clothing'],
+   reward:'Tomorrow is your last night before a week off. Go easy.'},
+  {id:2, date:'2026-07-02', label:'Thu Jul 2', name:'Quick Hit', zones:['Decor'], time:'15 min',
+   entry:'Pick up the closest decorative object that isn\'t a plant or a framed photo. Put it in a box.',
+   tasks:['Collect all decor from every room (wall art is already down)','Donate or toss anything that wouldn\'t go in 1C','Wrap anything fragile in t-shirts or dish towels','Box it, label it "decor — not urgent"'],
+   reward:'Dinner. You\'re done.'},
+  {id:3, date:'2026-07-05', label:'Sun Jul 5', name:'The Sunday Session', zones:['Dressers','Clothing closet shelves','Pantry'], time:'90 min',
+   entry:'Open your main dresser. Pull the top drawer completely out and put it on the bed.',
+   tasks:['Dressers: go drawer by drawer, pack everything except ~5 days of outfits you\'ll actually wear','Label dresser boxes by category (loungewear, workout, going out, etc.)','Clothing closet shelves: pack everything on the shelves — hanging clothes stay, movers have wardrobe boxes','Pantry: pull everything off shelves onto the counter, toss expired or nearly empty','Pantry: set aside what you\'ll eat Mon–Thu, box everything else and label "pantry — open soon"'],
+   reward:'That was the bulk of it. The rest of the week is finishing touches.'},
+  {id:4, date:'2026-07-06', label:'Mon Jul 6', name:'Bathroom', zones:['Bathroom'], time:'25 min',
    entry:'Open the medicine cabinet. Grab everything expired or that you\'ve had for over a year.',
-   tasks:['Clear the medicine cabinet — toss expired, box what\'s staying','Pull out under-sink items — toss empties','Box all hair and skincare, leave out only what you\'ll use before July 10','Now pivot: walk every room and collect all decorative objects','Donate or toss anything that wouldn\'t go in 1C, wrap fragile pieces in t-shirts, box and label "decor"'],
-   reward:'July 4th weekend starts tomorrow. Fully off the clock.'},
-  {id:6, date:'2026-07-06', label:'Mon Jul 6', name:'Drawer Archaeology', zones:['Dressers'], time:'30 min',
-   entry:'Open the top drawer of your main dresser. Pull out everything that is not clothing.',
-   tasks:['Clear the junk accumulation first (random non-clothing stuff)','Go drawer by drawer — pack what you\'re not wearing this week','Leave out only enough for the days until July 10','Label dresser boxes by category (loungewear, workout, etc.)'],
-   reward:'That show you\'ve been putting off. Watch it now.'},
-  {id:7, date:'2026-07-07', label:'Tue Jul 7', name:'The Wardrobe', zones:['Clothing closet'], time:'45 min',
-   entry:'Stand in front of your closet. Grab the 5 items hanging farthest to the left. Pull them out.',
-   tasks:['Work left to right, 5 items at a time — don\'t think, just pull','Quick call only: wear before July 10, or box it','Group by type as you go: tops, bottoms, dresses, jackets','Pack off-season and occasion pieces first','Leave out only 1–2 weeks of everyday outfits'],
-   reward:'This was the big one. Full night off — delivery, couch, Auggie, done.'},
-  {id:8, date:'2026-07-08', label:'Wed Jul 8', name:'Kitchen: First Wave', zones:['Kitchen (non-essentials)'], time:'40 min',
-   entry:'Open one cabinet that does NOT have your everyday dishes. Pull out anything you haven\'t touched in 3+ months.',
-   tasks:['Pack appliances you won\'t use this week (blender, extra pots, etc.)','Box up non-everyday dishes and glasses','Wrap fragile items in kitchen towels — uses up your linens too','Toss any food storage containers without matching lids','Leave: 1 pan, 1 pot, everyday plates and cups, utensils you need'],
-   reward:'Glass of wine. The apartment is almost packed.'},
-  {id:9, date:'2026-07-09', label:'Thu Jul 9', name:'The Final Push', zones:['Kitchen essentials + final sweep'], time:'30 min',
-   entry:'Get one box or bag and label it "OPEN FIRST." This is your first-night survival kit.',
-   tasks:['Pack the OPEN FIRST box: coffee maker or kettle, 1 mug, 1 plate, fork and knife, dish soap, phone charger, TP, a snack','Pack all remaining kitchen items','Walk every room — grab anything still sitting out','Final check: top shelves, backs of closets, under sinks'],
-   reward:'Tomorrow you get a whole new apartment. Tonight: whatever you want.'}
+   tasks:['Medicine cabinet: toss expired, box what\'s staying','Under-sink: toss empties, box the rest','Hair and skincare: pack it all, then pull out a small daily kit bag for the remaining days (just what you use every morning and night)','Label the main box "bathroom" — leave only the daily kit out'],
+   reward:'Easier than you thought.'},
+  {id:5, date:'2026-07-07', label:'Tue Jul 7', name:'Kitchen Part 1', zones:['Kitchen (non-essentials)'], time:'40 min',
+   entry:'Open one cabinet that doesn\'t have your everyday dishes. Pull out anything you haven\'t touched in 3+ months.',
+   tasks:['Pack all appliances you won\'t use this week (blender, extra pots, specialty equipment)','Box up non-everyday dishes, glasses, and serving pieces','Wrap fragile items in kitchen towels — this uses up your linens','Toss food storage containers without matching lids','Leave out: 1 pan, 1 pot, everyday plates and cups, the utensils you actually use'],
+   reward:'Halfway through the kitchen. One more night of this.'},
+  {id:6, date:'2026-07-08', label:'Wed Jul 8', name:'Kitchen Part 2 + First Night Box', zones:['Kitchen remaining','OPEN FIRST box'], time:'35 min',
+   entry:'Get a box. Label it "OPEN FIRST" before you pack anything else.',
+   tasks:['OPEN FIRST box: kettle or coffee maker, 1 mug, 1 plate, fork + knife, dish soap, phone charger, TP, a snack','Pack all remaining kitchen items you\'ve been using this week','Move bathroom daily kit bag into the OPEN FIRST box or label it separately','Walk through every room: top shelves, behind things, under furniture'],
+   reward:'Basically done.'},
+  {id:7, date:'2026-07-09', label:'Thu Jul 9', name:'Final Sweep', zones:['Whole apartment'], time:'20 min',
+   entry:'Walk to the room that feels most done. Start there.',
+   tasks:['Go room by room: top shelves, closet backs, under beds and sofas','Check bathroom — leave out only what you need tomorrow morning','Make sure every box is labeled','Pack a moving day bag: ID, wallet, phone charger, water, snack, Auggie\'s leash'],
+   reward:'Tomorrow is 1C.'}
 ];
 
 function packToday() { return new Date().toISOString().split('T')[0]; }
@@ -1490,10 +1482,10 @@ function updatePackHeader() {
   const meta = document.getElementById('packMeta');
   if (meta) {
     const daysStr = d === 0 ? 'Moving day!' : d + (d === 1 ? ' day to go' : ' days to go');
-    meta.textContent = daysStr + ' \u00b7 ' + c + ' / 9 quests done';
+    meta.textContent = daysStr + ' \u00b7 ' + c + ' / 7 quests done';
   }
   const bar = document.getElementById('packProgress');
-  if (bar) bar.style.width = (c / 9 * 100) + '%';
+  if (bar) bar.style.width = (c / 7 * 100) + '%';
 }
 
 function packCardHTML(q) {
@@ -1555,11 +1547,11 @@ function renderMoving() {
   const container = document.getElementById('packContainer');
   if (!container) return;
   let h = '';
-  h += '<div class="pack-phase">Week 1 &mdash; Jun 22 &amp; 25</div>';
+  h += '<div class="pack-phase">This week &mdash; Jul 1 &amp; 2</div>';
   PACK_QUESTS.slice(0, 2).forEach(q => { h += packCardHTML(q); });
-  h += '<div class="pack-phase">Week 2 &mdash; Jun 30, Jul 1 &amp; 2</div>';
+  h += '<div class="pack-phase">Jul 5, 6 &amp; 7 &mdash; Sunday through Tuesday</div>';
   PACK_QUESTS.slice(2, 5).forEach(q => { h += packCardHTML(q); });
-  h += '<div class="pack-phase">Week 3 &mdash; Jul 6, 7, 8 &amp; 9</div>';
+  h += '<div class="pack-phase">Final stretch &mdash; Jul 8 &amp; 9</div>';
   PACK_QUESTS.slice(5).forEach(q => { h += packCardHTML(q); });
   container.innerHTML = h;
   updatePackHeader();
